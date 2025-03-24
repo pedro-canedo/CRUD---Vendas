@@ -1,73 +1,78 @@
 package repository
 
 import (
-	"errors"
-	"sync"
+	"database/sql"
 	"vendas/internal/domain"
+	"vendas/internal/utils"
 )
 
-type ProdutoRepository struct {
-	produtos map[int64]*domain.Produto
-	mu       sync.RWMutex
-	nextID   int64
+type ProdutoRepository interface {
+	Create(produto *domain.Produto) error
+	GetByID(id string) (*domain.Produto, error)
+	GetAll() ([]domain.Produto, error)
+	Update(produto *domain.Produto) error
+	Delete(id string) error
 }
 
-func NewProdutoRepository() *ProdutoRepository {
-	return &ProdutoRepository{
-		produtos: make(map[int64]*domain.Produto),
-		nextID:   1,
+type ProdutoRepositoryImpl struct {
+	db *sql.DB
+}
+
+func NewProdutoRepository(db *sql.DB) *ProdutoRepositoryImpl {
+	return &ProdutoRepositoryImpl{db: db}
+}
+
+func (r *ProdutoRepositoryImpl) Create(produto *domain.Produto) error {
+	// Gera UUID para o produto
+	produto.ID = utils.GenerateUUID()
+
+	query := `INSERT INTO produtos (id, nome, descricao, preco, quantidade, data_criacao) VALUES (?, ?, ?, ?, ?, ?)`
+	_, err := r.db.Exec(query, produto.ID, produto.Nome, produto.Descricao, produto.Preco, produto.Quantidade, produto.DataCriacao)
+	if err != nil {
+		return err
 	}
-}
 
-func (r *ProdutoRepository) Create(produto *domain.Produto) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	produto.ID = r.nextID
-	r.produtos[produto.ID] = produto
-	r.nextID++
 	return nil
 }
 
-func (r *ProdutoRepository) GetByID(id int64) (*domain.Produto, error) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	if produto, exists := r.produtos[id]; exists {
-		return produto, nil
+func (r *ProdutoRepositoryImpl) GetByID(id string) (*domain.Produto, error) {
+	produto := &domain.Produto{}
+	query := `SELECT id, nome, descricao, preco, quantidade, data_criacao FROM produtos WHERE id = ?`
+	err := r.db.QueryRow(query, id).Scan(&produto.ID, &produto.Nome, &produto.Descricao, &produto.Preco, &produto.Quantidade, &produto.DataCriacao)
+	if err != nil {
+		return nil, err
 	}
-	return nil, errors.New("produto não encontrado")
+	return produto, nil
 }
 
-func (r *ProdutoRepository) GetAll() ([]domain.Produto, error) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
+func (r *ProdutoRepositoryImpl) GetAll() ([]domain.Produto, error) {
+	query := `SELECT id, nome, descricao, preco, quantidade, data_criacao FROM produtos`
+	rows, err := r.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 
-	produtos := make([]domain.Produto, 0, len(r.produtos))
-	for _, produto := range r.produtos {
-		produtos = append(produtos, *produto)
+	var produtos []domain.Produto
+	for rows.Next() {
+		var produto domain.Produto
+		err := rows.Scan(&produto.ID, &produto.Nome, &produto.Descricao, &produto.Preco, &produto.Quantidade, &produto.DataCriacao)
+		if err != nil {
+			return nil, err
+		}
+		produtos = append(produtos, produto)
 	}
 	return produtos, nil
 }
 
-func (r *ProdutoRepository) Update(produto *domain.Produto) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	if _, exists := r.produtos[produto.ID]; !exists {
-		return errors.New("produto não encontrado")
-	}
-	r.produtos[produto.ID] = produto
-	return nil
+func (r *ProdutoRepositoryImpl) Update(produto *domain.Produto) error {
+	query := `UPDATE produtos SET nome = ?, descricao = ?, preco = ?, quantidade = ? WHERE id = ?`
+	_, err := r.db.Exec(query, produto.Nome, produto.Descricao, produto.Preco, produto.Quantidade, produto.ID)
+	return err
 }
 
-func (r *ProdutoRepository) Delete(id int64) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	if _, exists := r.produtos[id]; !exists {
-		return errors.New("produto não encontrado")
-	}
-	delete(r.produtos, id)
-	return nil
+func (r *ProdutoRepositoryImpl) Delete(id string) error {
+	query := `DELETE FROM produtos WHERE id = ?`
+	_, err := r.db.Exec(query, id)
+	return err
 }

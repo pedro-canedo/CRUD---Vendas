@@ -4,14 +4,62 @@ import (
 	"errors"
 	"time"
 	"vendas/internal/domain"
+	"vendas/internal/repository"
 )
 
 type ProdutoService struct {
-	repo domain.ProdutoRepository
+	repo repository.ProdutoRepository
 }
 
-func NewProdutoService(repo domain.ProdutoRepository) *ProdutoService {
+func NewProdutoService(repo repository.ProdutoRepository) *ProdutoService {
 	return &ProdutoService{repo: repo}
+}
+
+func (s *ProdutoService) GetAll() ([]domain.Produto, error) {
+	return s.repo.GetAll()
+}
+
+func (s *ProdutoService) GetByID(id string) (*domain.Produto, error) {
+	return s.repo.GetByID(id)
+}
+
+func (s *ProdutoService) Create(produto *domain.Produto) error {
+	if produto.Nome == "" {
+		return errors.New("nome do produto é obrigatório")
+	}
+	if produto.Preco <= 0 {
+		return errors.New("preço do produto deve ser maior que zero")
+	}
+	if produto.Quantidade < 0 {
+		return errors.New("quantidade do produto não pode ser negativa")
+	}
+
+	return s.repo.Create(produto)
+}
+
+func (s *ProdutoService) Update(produto *domain.Produto) error {
+	if produto.ID == "" {
+		return errors.New("id do produto é obrigatório")
+	}
+	if produto.Nome == "" {
+		return errors.New("nome do produto é obrigatório")
+	}
+	if produto.Preco <= 0 {
+		return errors.New("preço do produto deve ser maior que zero")
+	}
+	if produto.Quantidade < 0 {
+		return errors.New("quantidade do produto não pode ser negativa")
+	}
+
+	return s.repo.Update(produto)
+}
+
+func (s *ProdutoService) Delete(id string) error {
+	if id == "" {
+		return errors.New("id do produto é obrigatório")
+	}
+
+	return s.repo.Delete(id)
 }
 
 func (s *ProdutoService) CreateProduto(produto *domain.Produto) error {
@@ -30,10 +78,6 @@ func (s *ProdutoService) CreateProduto(produto *domain.Produto) error {
 
 	// O ID será definido pelo repositório
 	return s.repo.Create(produto)
-}
-
-func (s *ProdutoService) GetProduto(id int64) (*domain.Produto, error) {
-	return s.repo.GetByID(id)
 }
 
 func (s *ProdutoService) ListProdutos() ([]domain.Produto, error) {
@@ -63,6 +107,6 @@ func (s *ProdutoService) UpdateProduto(produto *domain.Produto) error {
 	return s.repo.Update(produto)
 }
 
-func (s *ProdutoService) DeleteProduto(id int64) error {
+func (s *ProdutoService) DeleteProduto(id string) error {
 	return s.repo.Delete(id)
 }

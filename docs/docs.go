@@ -9,7 +9,14 @@ const docTemplate = `{
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
-        "contact": {},
+        "contact": {
+            "name": "Pedro",
+            "email": "pedro@example.com"
+        },
+        "license": {
+            "name": "MIT",
+            "url": "https://opensource.org/licenses/MIT"
+        },
         "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
@@ -17,7 +24,7 @@ const docTemplate = `{
     "paths": {
         "/produtos": {
             "get": {
-                "description": "Retorna a lista completa de produtos",
+                "description": "Retorna uma lista de todos os produtos cadastrados",
                 "consumes": [
                     "application/json"
                 ],
@@ -41,7 +48,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Cria um novo produto no sistema",
+                "description": "Cria um novo produto com os dados fornecidos",
                 "consumes": [
                     "application/json"
                 ],
@@ -54,12 +61,12 @@ const docTemplate = `{
                 "summary": "Cria um novo produto",
                 "parameters": [
                     {
-                        "description": "Produto a ser criado",
+                        "description": "Dados do produto",
                         "name": "produto",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/domain.CreateProdutoDTO"
+                            "$ref": "#/definitions/domain.Produto"
                         }
                     }
                 ],
@@ -84,7 +91,7 @@ const docTemplate = `{
         },
         "/produtos/{id}": {
             "get": {
-                "description": "Retorna um produto pelo ID",
+                "description": "Retorna um produto específico pelo seu ID",
                 "consumes": [
                     "application/json"
                 ],
@@ -94,11 +101,11 @@ const docTemplate = `{
                 "tags": [
                     "produtos"
                 ],
-                "summary": "Obtém um produto específico",
+                "summary": "Obtém um produto por ID",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "ID do Produto",
+                        "type": "string",
+                        "description": "ID do produto",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -109,6 +116,15 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/domain.Produto"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     },
                     "404": {
@@ -123,7 +139,7 @@ const docTemplate = `{
                 }
             },
             "put": {
-                "description": "Atualiza um produto existente",
+                "description": "Atualiza um produto existente com os dados fornecidos",
                 "consumes": [
                     "application/json"
                 ],
@@ -136,19 +152,19 @@ const docTemplate = `{
                 "summary": "Atualiza um produto",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "ID do Produto",
+                        "type": "string",
+                        "description": "ID do produto",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Dados do produto a serem atualizados",
+                        "description": "Dados do produto",
                         "name": "produto",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/domain.UpdateProdutoDTO"
+                            "$ref": "#/definitions/domain.Produto"
                         }
                     }
                 ],
@@ -180,7 +196,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Remove um produto do sistema",
+                "description": "Remove um produto pelo seu ID",
                 "consumes": [
                     "application/json"
                 ],
@@ -193,8 +209,8 @@ const docTemplate = `{
                 "summary": "Remove um produto",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "ID do Produto",
+                        "type": "string",
+                        "description": "ID do produto",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -203,6 +219,329 @@ const docTemplate = `{
                 "responses": {
                     "204": {
                         "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/vendas": {
+            "get": {
+                "description": "Retorna uma lista de todas as vendas cadastradas",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "vendas"
+                ],
+                "summary": "Lista todas as vendas",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/domain.Venda"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Cria uma nova venda com os dados fornecidos",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "vendas"
+                ],
+                "summary": "Cria uma nova venda",
+                "parameters": [
+                    {
+                        "description": "Dados da venda",
+                        "name": "venda",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/domain.CreateVendaDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/domain.Venda"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/vendas/cliente/{cliente}": {
+            "get": {
+                "description": "Retorna uma lista de vendas filtrada por cliente",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "vendas"
+                ],
+                "summary": "Lista vendas por cliente",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Nome do cliente",
+                        "name": "cliente",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/domain.Venda"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/vendas/periodo/{inicio}/{fim}": {
+            "get": {
+                "description": "Retorna uma lista de vendas filtrada por período",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "vendas"
+                ],
+                "summary": "Lista vendas por período",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Data inicial (timestamp)",
+                        "name": "inicio",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Data final (timestamp)",
+                        "name": "fim",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/domain.Venda"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/vendas/{id}": {
+            "get": {
+                "description": "Retorna uma venda específica pelo seu ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "vendas"
+                ],
+                "summary": "Obtém uma venda por ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID da venda",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.Venda"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Atualiza uma venda existente com os dados fornecidos",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "vendas"
+                ],
+                "summary": "Atualiza uma venda",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID da venda",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Dados da venda",
+                        "name": "venda",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/domain.Venda"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.Venda"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Remove uma venda pelo seu ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "vendas"
+                ],
+                "summary": "Remove uma venda",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID da venda",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
                     },
                     "404": {
                         "description": "Not Found",
@@ -218,26 +557,61 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "domain.CreateProdutoDTO": {
+        "domain.CreateItemVendaDTO": {
             "type": "object",
             "required": [
-                "nome",
-                "preco",
+                "produto_id",
                 "quantidade"
             ],
             "properties": {
-                "descricao": {
+                "produto_id": {
                     "type": "string"
-                },
-                "nome": {
-                    "type": "string"
-                },
-                "preco": {
-                    "type": "number"
                 },
                 "quantidade": {
-                    "type": "integer",
+                    "type": "integer"
+                }
+            }
+        },
+        "domain.CreateVendaDTO": {
+            "type": "object",
+            "required": [
+                "cliente",
+                "itens"
+            ],
+            "properties": {
+                "cliente": {
+                    "type": "string"
+                },
+                "desconto": {
+                    "type": "number",
+                    "maximum": 100,
                     "minimum": 0
+                },
+                "itens": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.CreateItemVendaDTO"
+                    }
+                }
+            }
+        },
+        "domain.ItemVenda": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "preco_unitario": {
+                    "type": "number"
+                },
+                "produto_id": {
+                    "type": "string"
+                },
+                "quantidade": {
+                    "type": "integer"
+                },
+                "subtotal": {
+                    "type": "number"
                 }
             }
         },
@@ -251,7 +625,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "id": {
-                    "type": "integer"
+                    "type": "string"
                 },
                 "nome": {
                     "type": "string"
@@ -264,30 +638,43 @@ const docTemplate = `{
                 }
             }
         },
-        "domain.UpdateProdutoDTO": {
+        "domain.Venda": {
             "type": "object",
-            "required": [
-                "nome",
-                "preco",
-                "quantidade"
-            ],
             "properties": {
-                "descricao": {
+                "cliente": {
                     "type": "string"
                 },
-                "nome": {
+                "data_venda": {
                     "type": "string"
                 },
-                "preco": {
+                "desconto": {
                     "type": "number"
                 },
-                "quantidade": {
-                    "type": "integer",
-                    "minimum": 0
+                "id": {
+                    "type": "string"
+                },
+                "itens": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.ItemVenda"
+                    }
+                },
+                "total": {
+                    "type": "number"
                 }
             }
         }
-    }
+    },
+    "tags": [
+        {
+            "description": "Operações relacionadas a produtos",
+            "name": "produtos"
+        },
+        {
+            "description": "Operações relacionadas a vendas",
+            "name": "vendas"
+        }
+    ]
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
@@ -295,7 +682,7 @@ var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
 	Host:             "localhost:8080",
 	BasePath:         "/api/v1",
-	Schemes:          []string{},
+	Schemes:          []string{"http"},
 	Title:            "Sistema de Vendas API",
 	Description:      "API para gerenciamento de vendas e produtos",
 	InfoInstanceName: "swagger",

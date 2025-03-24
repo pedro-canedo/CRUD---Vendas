@@ -1,20 +1,43 @@
 basePath: /api/v1
 definitions:
-  domain.CreateProdutoDTO:
+  domain.CreateItemVendaDTO:
     properties:
-      descricao:
+      produto_id:
         type: string
-      nome:
-        type: string
-      preco:
-        type: number
       quantidade:
-        minimum: 0
         type: integer
     required:
-    - nome
-    - preco
+    - produto_id
     - quantidade
+    type: object
+  domain.CreateVendaDTO:
+    properties:
+      cliente:
+        type: string
+      desconto:
+        maximum: 100
+        minimum: 0
+        type: number
+      itens:
+        items:
+          $ref: '#/definitions/domain.CreateItemVendaDTO'
+        type: array
+    required:
+    - cliente
+    - itens
+    type: object
+  domain.ItemVenda:
+    properties:
+      id:
+        type: string
+      preco_unitario:
+        type: number
+      produto_id:
+        type: string
+      quantidade:
+        type: integer
+      subtotal:
+        type: number
     type: object
   domain.Produto:
     properties:
@@ -23,7 +46,7 @@ definitions:
       descricao:
         type: string
       id:
-        type: integer
+        type: string
       nome:
         type: string
       preco:
@@ -31,26 +54,32 @@ definitions:
       quantidade:
         type: integer
     type: object
-  domain.UpdateProdutoDTO:
+  domain.Venda:
     properties:
-      descricao:
+      cliente:
         type: string
-      nome:
+      data_venda:
         type: string
-      preco:
+      desconto:
         type: number
-      quantidade:
-        minimum: 0
-        type: integer
-    required:
-    - nome
-    - preco
-    - quantidade
+      id:
+        type: string
+      itens:
+        items:
+          $ref: '#/definitions/domain.ItemVenda'
+        type: array
+      total:
+        type: number
     type: object
 host: localhost:8080
 info:
-  contact: {}
+  contact:
+    email: pedro@example.com
+    name: Pedro
   description: API para gerenciamento de vendas e produtos
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
   title: Sistema de Vendas API
   version: "1.0"
 paths:
@@ -58,7 +87,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Retorna a lista completa de produtos
+      description: Retorna uma lista de todos os produtos cadastrados
       produces:
       - application/json
       responses:
@@ -74,14 +103,14 @@ paths:
     post:
       consumes:
       - application/json
-      description: Cria um novo produto no sistema
+      description: Cria um novo produto com os dados fornecidos
       parameters:
-      - description: Produto a ser criado
+      - description: Dados do produto
         in: body
         name: produto
         required: true
         schema:
-          $ref: '#/definitions/domain.CreateProdutoDTO'
+          $ref: '#/definitions/domain.Produto'
       produces:
       - application/json
       responses:
@@ -102,18 +131,24 @@ paths:
     delete:
       consumes:
       - application/json
-      description: Remove um produto do sistema
+      description: Remove um produto pelo seu ID
       parameters:
-      - description: ID do Produto
+      - description: ID do produto
         in: path
         name: id
         required: true
-        type: integer
+        type: string
       produces:
       - application/json
       responses:
         "204":
           description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "404":
           description: Not Found
           schema:
@@ -126,13 +161,13 @@ paths:
     get:
       consumes:
       - application/json
-      description: Retorna um produto pelo ID
+      description: Retorna um produto específico pelo seu ID
       parameters:
-      - description: ID do Produto
+      - description: ID do produto
         in: path
         name: id
         required: true
-        type: integer
+        type: string
       produces:
       - application/json
       responses:
@@ -140,31 +175,37 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/domain.Produto'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "404":
           description: Not Found
           schema:
             additionalProperties:
               type: string
             type: object
-      summary: Obtém um produto específico
+      summary: Obtém um produto por ID
       tags:
       - produtos
     put:
       consumes:
       - application/json
-      description: Atualiza um produto existente
+      description: Atualiza um produto existente com os dados fornecidos
       parameters:
-      - description: ID do Produto
+      - description: ID do produto
         in: path
         name: id
         required: true
-        type: integer
-      - description: Dados do produto a serem atualizados
+        type: string
+      - description: Dados do produto
         in: body
         name: produto
         required: true
         schema:
-          $ref: '#/definitions/domain.UpdateProdutoDTO'
+          $ref: '#/definitions/domain.Produto'
       produces:
       - application/json
       responses:
@@ -187,4 +228,219 @@ paths:
       summary: Atualiza um produto
       tags:
       - produtos
+  /vendas:
+    get:
+      consumes:
+      - application/json
+      description: Retorna uma lista de todas as vendas cadastradas
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.Venda'
+            type: array
+      summary: Lista todas as vendas
+      tags:
+      - vendas
+    post:
+      consumes:
+      - application/json
+      description: Cria uma nova venda com os dados fornecidos
+      parameters:
+      - description: Dados da venda
+        in: body
+        name: venda
+        required: true
+        schema:
+          $ref: '#/definitions/domain.CreateVendaDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.Venda'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Cria uma nova venda
+      tags:
+      - vendas
+  /vendas/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove uma venda pelo seu ID
+      parameters:
+      - description: ID da venda
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Remove uma venda
+      tags:
+      - vendas
+    get:
+      consumes:
+      - application/json
+      description: Retorna uma venda específica pelo seu ID
+      parameters:
+      - description: ID da venda
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Venda'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Obtém uma venda por ID
+      tags:
+      - vendas
+    put:
+      consumes:
+      - application/json
+      description: Atualiza uma venda existente com os dados fornecidos
+      parameters:
+      - description: ID da venda
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Dados da venda
+        in: body
+        name: venda
+        required: true
+        schema:
+          $ref: '#/definitions/domain.Venda'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Venda'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Atualiza uma venda
+      tags:
+      - vendas
+  /vendas/cliente/{cliente}:
+    get:
+      consumes:
+      - application/json
+      description: Retorna uma lista de vendas filtrada por cliente
+      parameters:
+      - description: Nome do cliente
+        in: path
+        name: cliente
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.Venda'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Lista vendas por cliente
+      tags:
+      - vendas
+  /vendas/periodo/{inicio}/{fim}:
+    get:
+      consumes:
+      - application/json
+      description: Retorna uma lista de vendas filtrada por período
+      parameters:
+      - description: Data inicial (timestamp)
+        in: path
+        name: inicio
+        required: true
+        type: integer
+      - description: Data final (timestamp)
+        in: path
+        name: fim
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.Venda'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Lista vendas por período
+      tags:
+      - vendas
+schemes:
+- http
 swagger: "2.0"
+tags:
+- description: Operações relacionadas a produtos
+  name: produtos
+- description: Operações relacionadas a vendas
+  name: vendas

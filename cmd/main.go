@@ -1,17 +1,21 @@
 package main
 
 import (
-	"net/http"
-	"strconv"
+	"encoding/json"
+	"fmt"
+	"log"
+	"os"
+	"time"
+	"vendas/docs"
+	"vendas/internal/database"
 	"vendas/internal/domain"
 	"vendas/internal/repository"
 	"vendas/internal/service"
+	"vendas/internal/web"
 
-	_ "vendas/docs" // Importa os docs do Swagger
-
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
-	echoSwagger "github.com/swaggo/echo-swagger"
+	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 // @title Sistema de Vendas API
@@ -19,177 +23,70 @@ import (
 // @description API para gerenciamento de vendas e produtos
 // @host localhost:8080
 // @BasePath /api/v1
+// @schemes http
+// @contact.name Pedro
+// @contact.email pedro@example.com
+// @license.name MIT
+// @license.url https://opensource.org/licenses/MIT
+// @tag.name produtos
+// @tag.description Operações relacionadas a produtos
+// @tag.name vendas
+// @tag.description Operações relacionadas a vendas
 func main() {
-	// Inicializa o Echo
-	e := echo.New()
+	// Inicializa o banco de dados
+	if err := database.InitDB(); err != nil {
+		log.Fatalf("Erro ao inicializar o banco de dados: %v", err)
+	}
 
-	// Middleware
-	e.Use(middleware.Logger())
-	e.Use(middleware.Recover())
-	e.Use(middleware.CORS())
+	// Carrega produtos iniciais
+	if err := loadInitialProducts(); err != nil {
+		log.Printf("Erro ao carregar produtos iniciais: %v", err)
+	}
 
-	// Inicializa repositórios e serviços
-	produtoRepo := repository.NewProdutoRepository()
+	// Inicializa os repositories
+	produtoRepo := repository.NewProdutoRepository(database.DB)
+	vendaRepo := repository.NewVendaRepository(database.DB)
+
+	// Inicializa os services
 	produtoService := service.NewProdutoService(produtoRepo)
+	vendaService := service.NewVendaService(vendaRepo, produtoRepo)
 
-	// Grupo de rotas API v1
-	v1 := e.Group("/api/v1")
+	// Inicializa o router
+	router := gin.Default()
 
-	// Rotas de Produtos
-	produtos := v1.Group("/produtos")
-	produtos.GET("", getProdutos(produtoService))
-	produtos.GET("/:id", getProduto(produtoService))
-	produtos.POST("", createProduto(produtoService))
-	produtos.PUT("/:id", updateProduto(produtoService))
-	produtos.DELETE("/:id", deleteProduto(produtoService))
+	// Configura o Swagger
+	docs.SwaggerInfo.Title = "API de Vendas"
+	docs.SwaggerInfo.Description = "API para gerenciamento de vendas e produtos"
+	docs.SwaggerInfo.Version = "1.0"
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	// Rotas de Vendas
-	vendas := v1.Group("/vendas")
-	vendas.GET("", getVendas)
-	vendas.POST("", createVenda)
-
-	// Documentação Swagger
-	e.GET("/swagger/*", echoSwagger.WrapHandler)
+	// Configura as rotas
+	web.SetupRoutes(router, produtoService, vendaService)
 
 	// Inicia o servidor
-	e.Logger.Fatal(e.Start(":8080"))
-}
-
-// @Summary Lista todos os produtos
-// @Description Retorna a lista completa de produtos
-// @Tags produtos
-// @Accept json
-// @Produce json
-// @Success 200 {array} domain.Produto
-// @Router /produtos [get]
-func getProdutos(service *service.ProdutoService) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		produtos, err := service.ListProdutos()
-		if err != nil {
-			return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
-		}
-		return c.JSON(http.StatusOK, produtos)
+	if err := router.Run(":8080"); err != nil {
+		log.Fatalf("Erro ao iniciar o servidor: %v", err)
 	}
 }
 
-// @Summary Obtém um produto específico
-// @Description Retorna um produto pelo ID
-// @Tags produtos
-// @Accept json
-// @Produce json
-// @Param id path int true "ID do Produto"
-// @Success 200 {object} domain.Produto
-// @Failure 404 {object} map[string]string
-// @Router /produtos/{id} [get]
-func getProduto(service *service.ProdutoService) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		id, err := strconv.ParseInt(c.Param("id"), 10, 64)
-		if err != nil {
-			return c.JSON(http.StatusBadRequest, map[string]string{"error": "ID inválido"})
-		}
-		produto, err := service.GetProduto(id)
-		if err != nil {
-			return c.JSON(http.StatusNotFound, map[string]string{"error": "Produto não encontrado"})
-		}
-		return c.JSON(http.StatusOK, produto)
+func loadInitialProducts() error {
+	file, err := os.ReadFile("productsCreate.json")
+	if err != nil {
+		return fmt.Errorf("erro ao ler arquivo de produtos: %v", err)
 	}
-}
 
-// @Summary Cria um novo produto
-// @Description Cria um novo produto no sistema
-// @Tags produtos
-// @Accept json
-// @Produce json
-// @Param produto body domain.CreateProdutoDTO true "Produto a ser criado"
-// @Success 201 {object} domain.Produto
-// @Failure 400 {object} map[string]string
-// @Router /produtos [post]
-func createProduto(service *service.ProdutoService) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		dto := new(domain.CreateProdutoDTO)
-		if err := c.Bind(dto); err != nil {
-			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
-		}
-
-		produto := &domain.Produto{
-			Nome:       dto.Nome,
-			Descricao:  dto.Descricao,
-			Preco:      dto.Preco,
-			Quantidade: dto.Quantidade,
-		}
-
-		if err := service.CreateProduto(produto); err != nil {
-			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
-		}
-		return c.JSON(http.StatusCreated, produto)
+	var produtos []domain.Produto
+	if err := json.Unmarshal(file, &produtos); err != nil {
+		return fmt.Errorf("erro ao decodificar produtos: %v", err)
 	}
-}
 
-// @Summary Atualiza um produto
-// @Description Atualiza um produto existente
-// @Tags produtos
-// @Accept json
-// @Produce json
-// @Param id path int true "ID do Produto"
-// @Param produto body domain.UpdateProdutoDTO true "Dados do produto a serem atualizados"
-// @Success 200 {object} domain.Produto
-// @Failure 400 {object} map[string]string
-// @Failure 404 {object} map[string]string
-// @Router /produtos/{id} [put]
-func updateProduto(service *service.ProdutoService) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		id, err := strconv.ParseInt(c.Param("id"), 10, 64)
-		if err != nil {
-			return c.JSON(http.StatusBadRequest, map[string]string{"error": "ID inválido"})
+	produtoRepo := repository.NewProdutoRepository(database.DB)
+	for _, produto := range produtos {
+		produto.DataCriacao = time.Now()
+		if err := produtoRepo.Create(&produto); err != nil {
+			return fmt.Errorf("erro ao criar produto %s: %v", produto.Nome, err)
 		}
-
-		dto := new(domain.UpdateProdutoDTO)
-		if err := c.Bind(dto); err != nil {
-			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
-		}
-
-		produto := &domain.Produto{
-			ID:         id,
-			Nome:       dto.Nome,
-			Descricao:  dto.Descricao,
-			Preco:      dto.Preco,
-			Quantidade: dto.Quantidade,
-		}
-
-		if err := service.UpdateProduto(produto); err != nil {
-			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
-		}
-		return c.JSON(http.StatusOK, produto)
 	}
-}
 
-// @Summary Remove um produto
-// @Description Remove um produto do sistema
-// @Tags produtos
-// @Accept json
-// @Produce json
-// @Param id path int true "ID do Produto"
-// @Success 204 "No Content"
-// @Failure 404 {object} map[string]string
-// @Router /produtos/{id} [delete]
-func deleteProduto(service *service.ProdutoService) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		id, err := strconv.ParseInt(c.Param("id"), 10, 64)
-		if err != nil {
-			return c.JSON(http.StatusBadRequest, map[string]string{"error": "ID inválido"})
-		}
-		if err := service.DeleteProduto(id); err != nil {
-			return c.JSON(http.StatusNotFound, map[string]string{"error": "Produto não encontrado"})
-		}
-		return c.NoContent(http.StatusNoContent)
-	}
-}
-
-// Handlers temporários para vendas
-func getVendas(c echo.Context) error {
-	return c.JSON(http.StatusOK, map[string]string{"message": "Lista de Vendas"})
-}
-
-func createVenda(c echo.Context) error {
-	return c.JSON(http.StatusCreated, map[string]string{"message": "Venda criada"})
+	return nil
 }

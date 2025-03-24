@@ -1,4 +1,4 @@
-.PHONY: run swagger test
+.PHONY: run swagger test seed dev clean
 
 # Executa a aplicação
 run:
@@ -12,9 +12,14 @@ swagger:
 test:
 	go test ./...
 
+# Carrega dados iniciais
+seed:
+	go run cmd/seed/main.go
+
 # Gera a documentação e executa a aplicação
-dev: swagger run
+dev: swagger seed run
 
 # Limpa arquivos temporários
 clean:
-	rm -rf docs/docs.go docs/swagger.json docs/swagger.yaml 
+	rm -rf docs/docs.go docs/swagger.json docs/swagger.yaml
+	rm -f vendas.db 
