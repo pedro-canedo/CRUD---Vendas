@@ -1,0 +1,190 @@
+basePath: /api/v1
+definitions:
+  domain.CreateProdutoDTO:
+    properties:
+      descricao:
+        type: string
+      nome:
+        type: string
+      preco:
+        type: number
+      quantidade:
+        minimum: 0
+        type: integer
+    required:
+    - nome
+    - preco
+    - quantidade
+    type: object
+  domain.Produto:
+    properties:
+      data_criacao:
+        type: string
+      descricao:
+        type: string
+      id:
+        type: integer
+      nome:
+        type: string
+      preco:
+        type: number
+      quantidade:
+        type: integer
+    type: object
+  domain.UpdateProdutoDTO:
+    properties:
+      descricao:
+        type: string
+      nome:
+        type: string
+      preco:
+        type: number
+      quantidade:
+        minimum: 0
+        type: integer
+    required:
+    - nome
+    - preco
+    - quantidade
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: API para gerenciamento de vendas e produtos
+  title: Sistema de Vendas API
+  version: "1.0"
+paths:
+  /produtos:
+    get:
+      consumes:
+      - application/json
+      description: Retorna a lista completa de produtos
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.Produto'
+            type: array
+      summary: Lista todos os produtos
+      tags:
+      - produtos
+    post:
+      consumes:
+      - application/json
+      description: Cria um novo produto no sistema
+      parameters:
+      - description: Produto a ser criado
+        in: body
+        name: produto
+        required: true
+        schema:
+          $ref: '#/definitions/domain.CreateProdutoDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.Produto'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Cria um novo produto
+      tags:
+      - produtos
+  /produtos/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove um produto do sistema
+      parameters:
+      - description: ID do Produto
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Remove um produto
+      tags:
+      - produtos
+    get:
+      consumes:
+      - application/json
+      description: Retorna um produto pelo ID
+      parameters:
+      - description: ID do Produto
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Produto'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Obtém um produto específico
+      tags:
+      - produtos
+    put:
+      consumes:
+      - application/json
+      description: Atualiza um produto existente
+      parameters:
+      - description: ID do Produto
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Dados do produto a serem atualizados
+        in: body
+        name: produto
+        required: true
+        schema:
+          $ref: '#/definitions/domain.UpdateProdutoDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Produto'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Atualiza um produto
+      tags:
+      - produtos
+swagger: "2.0"
