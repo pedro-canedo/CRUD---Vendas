@@ -1,0 +1,34 @@
+{
+    "users": [
+        {
+            "nome": "Administrador",
+            "email": "admin@vendas.com",
+            "senha": "admin123",
+            "role": "admin"
+        },
+        {
+            "nome": "Vendedor João",
+            "email": "joao@vendas.com",
+            "senha": "vendedor123",
+            "role": "vendedor"
+        },
+        {
+            "nome": "Vendedor Maria",
+            "email": "maria@vendas.com",
+            "senha": "vendedor123",
+            "role": "vendedor"
+        },
+        {
+            "nome": "Cliente Pedro",
+            "email": "pedro@cliente.com",
+            "senha": "cliente123",
+            "role": "cliente"
+        },
+        {
+            "nome": "Cliente Ana",
+            "email": "ana@cliente.com",
+            "senha": "cliente123",
+            "role": "cliente"
+        }
+    ]
+}

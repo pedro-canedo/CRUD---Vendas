@@ -1,0 +1,39 @@
+{
+    "clients": [
+        {
+            "nome": "Pedro Silva",
+            "email": "pedro@cliente.com",
+            "telefone": "11999999999",
+            "endereco": "Rua das Flores, 123 - São Paulo",
+            "cpf": "12345678900"
+        },
+        {
+            "nome": "Ana Santos",
+            "email": "ana@cliente.com",
+            "telefone": "11988888888",
+            "endereco": "Avenida Paulista, 456 - São Paulo",
+            "cpf": "98765432100"
+        },
+        {
+            "nome": "Carlos Oliveira",
+            "email": "carlos@cliente.com",
+            "telefone": "11977777777",
+            "endereco": "Rua Augusta, 789 - São Paulo",
+            "cpf": "45678912300"
+        },
+        {
+            "nome": "Mariana Costa",
+            "email": "mariana@cliente.com",
+            "telefone": "11966666666",
+            "endereco": "Rua Oscar Freire, 321 - São Paulo",
+            "cpf": "78912345600"
+        },
+        {
+            "nome": "Lucas Ferreira",
+            "email": "lucas@cliente.com",
+            "telefone": "11955555555",
+            "endereco": "Rua dos Pinheiros, 654 - São Paulo",
+            "cpf": "32165498700"
+        }
+    ]
+}

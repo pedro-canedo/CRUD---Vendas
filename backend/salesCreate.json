@@ -1,0 +1,53 @@
+{
+    "sales": [
+        {
+            "cliente_id": "cliente1",
+            "vendedor_id": "vendedor1",
+            "data_venda": "2024-03-24T10:00:00Z",
+            "valor_total": 299.97,
+            "items": [
+                {
+                    "produto_id": "produto1",
+                    "quantidade": 2,
+                    "preco_unitario": 99.99
+                },
+                {
+                    "produto_id": "produto2",
+                    "quantidade": 1,
+                    "preco_unitario": 99.99
+                }
+            ]
+        },
+        {
+            "cliente_id": "cliente2",
+            "vendedor_id": "vendedor2",
+            "data_venda": "2024-03-24T11:30:00Z",
+            "valor_total": 199.98,
+            "items": [
+                {
+                    "produto_id": "produto3",
+                    "quantidade": 2,
+                    "preco_unitario": 99.99
+                }
+            ]
+        },
+        {
+            "cliente_id": "cliente3",
+            "vendedor_id": "vendedor1",
+            "data_venda": "2024-03-24T14:15:00Z",
+            "valor_total": 499.95,
+            "items": [
+                {
+                    "produto_id": "produto1",
+                    "quantidade": 3,
+                    "preco_unitario": 99.99
+                },
+                {
+                    "produto_id": "produto2",
+                    "quantidade": 2,
+                    "preco_unitario": 99.99
+                }
+            ]
+        }
+    ]
+}
